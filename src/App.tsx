@@ -20,6 +20,7 @@ import { AdminDashboard } from "./pages/admin/AdminDashboard"
 import { AdminProtectedRoute } from "./components/auth/AdminProtectedRoute"
 import { AdminThemeApplier } from "./components/auth/AdminThemeApplier"
 import { MyBookings } from "./pages/bookings/MyBookings"
+import { SavedProperties } from "./pages/saved/SavedProperties"
 
 const navLinks: NavbarLink[] = [
   { label: "Explore", to: "/" },
@@ -62,6 +63,15 @@ export function App() {
               element={
                 <ProtectedRoute>
                   <MyBookings />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/saved"
+              element={
+                <ProtectedRoute>
+                 <SavedProperties />
                 </ProtectedRoute>
               }
             />

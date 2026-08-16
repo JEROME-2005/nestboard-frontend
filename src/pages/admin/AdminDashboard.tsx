@@ -2,6 +2,7 @@ import { useAuthStore } from "@/stores/authStore"
 import { useQueries } from "@tanstack/react-query"
 import { Building2, House, TrendingUp } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
+
 import { fetchPropertyDetail } from "@/api/properties"
 import { useProperties } from "@/hooks/useProperties"
 
@@ -79,25 +80,17 @@ export function AdminDashboard() {
     data: propertiesResponse,
     isLoading: propertiesLoading,
     isError: propertiesError,
-  } = useProperties()
+  } = useProperties({
+    limit: 100,
+  })
 
-  /*
-   * useProperties() returns:
-   *
-   * {
-   *   data: Property[],
-   *   meta: {
-   *     page,
-   *     limit,
-   *     total,
-   *     totalPages,
-   *     hasNextPage,
-   *     hasPreviousPage
-   *   }
-   * }
-   */
-
-  const properties = propertiesResponse?.data ?? []
+  const properties = useMemo(
+    () =>
+      propertiesResponse?.pages.flatMap(
+        (page) => page.data,
+      ) ?? [],
+    [propertiesResponse],
+  )
 
   const propertyIds = useMemo(
     () => properties.map((property) => property.id),
@@ -108,17 +101,13 @@ export function AdminDashboard() {
     queries: propertyIds.map((id) => ({
       queryKey: ["property-detail", id],
       queryFn: () => fetchPropertyDetail(id),
-      enabled: propertyIds.length > 0,
+      enabled: Boolean(id),
       staleTime: 60_000,
     })),
   })
 
-  /*
-   * Use server-provided total instead of the currently
-   * loaded array length.
-   */
   const totalProperties =
-    propertiesResponse?.meta.total ?? null
+    propertiesResponse?.pages[0]?.meta.total ?? null
 
   const roomsLoading =
     propertyIds.length > 0 &&
@@ -159,9 +148,7 @@ export function AdminDashboard() {
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             <StatCard
               icon={
-                <Building2
-                  className="h-5 w-5 text-teal-600"
-                />
+                <Building2 className="h-5 w-5 text-teal-600" />
               }
               iconWrapClassName="bg-teal-100"
               trend="+1"
@@ -177,9 +164,7 @@ export function AdminDashboard() {
 
             <StatCard
               icon={
-                <House
-                  className="h-5 w-5 text-purple-600"
-                />
+                <House className="h-5 w-5 text-purple-600" />
               }
               iconWrapClassName="bg-purple-100"
               trend="+4"
