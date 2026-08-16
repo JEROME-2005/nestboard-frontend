@@ -1,4 +1,4 @@
-import { Heart, Building2, MessageCircle, LogOut } from "lucide-react"
+import { Heart, Building2, MessageCircle, LogOut, CalendarCheck, } from "lucide-react"
 import { NavLink, useNavigate } from "react-router"
 import { useAuthStore } from "@/stores/authStore"
 
@@ -112,14 +112,58 @@ export function Navbar({ links }: NavbarProps) {
             </>
           )}
 
-          {!isSignedIn && (
-            <NavLink
-              to="/sign-in"
-              className="text-md rounded-full bg-white px-4 py-1.5 text-gray-800 hover:bg-white/90"
-            >
-              Sign in
-            </NavLink>
-          )}
+          {isSignedIn && (
+  <>
+    <NavLink
+      to="/bookings"
+      className="rounded-full p-2"
+      title="My Bookings"
+    >
+      <CalendarCheck className="h-5 w-5 text-white/70 hover:text-white" />
+    </NavLink>
+
+    <NavLink
+      to="/saved"
+      className="rounded-full p-2"
+      title="Saved properties"
+    >
+      <Heart className="h-5 w-5 text-white/70 hover:text-white" />
+    </NavLink>
+
+    <button
+      type="button"
+      className="rounded-full p-2"
+      title="Messages"
+    >
+      <MessageCircle className="h-5 w-5 text-white/70 hover:text-white" />
+    </button>
+
+    <div className="flex items-center gap-2">
+      {user.avatarUrl ? (
+        <img
+          src={user.avatarUrl}
+          alt={user.displayName}
+          className="h-9 w-9 rounded-full object-cover"
+        />
+      ) : (
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-gray-700">
+          {user.displayName
+            .charAt(0)
+            .toUpperCase()}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleLogout}
+        className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white"
+        title="Sign out"
+      >
+        <LogOut className="h-5 w-5" />
+      </button>
+    </div>
+  </>
+)}
         </div>
       </nav>
     </div>

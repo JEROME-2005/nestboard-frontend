@@ -1,7 +1,15 @@
-import { BrowserRouter, Route, Routes, Outlet } from "react-router"
+import {
+  BrowserRouter,
+  Route,
+  Routes,
+  Outlet,
+} from "react-router"
 import { Home } from "./pages/home/Home"
 import { PropertyDetails } from "./pages/property/PropertyDetails"
-import { Navbar, type NavbarLink } from "./components/common/Navbar"
+import {
+  Navbar,
+  type NavbarLink,
+} from "./components/common/Navbar"
 import { MapRoute } from "./components/common/MapRoute"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { SignIn } from "./pages/Auth/SignIn"
@@ -11,11 +19,12 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute"
 import { AdminDashboard } from "./pages/admin/AdminDashboard"
 import { AdminProtectedRoute } from "./components/auth/AdminProtectedRoute"
 import { AdminThemeApplier } from "./components/auth/AdminThemeApplier"
+import { MyBookings } from "./pages/bookings/MyBookings"
 
 const navLinks: NavbarLink[] = [
   { label: "Explore", to: "/" },
   { label: "Map View", to: "/map" },
-  { label: "Dashboard", to: "/dashboard" },
+  { label: "My Bookings", to: "/bookings" },
 ]
 
 function AppLayout() {
@@ -33,14 +42,29 @@ export function App() {
       <AdminThemeApplier>
         <Routes>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Home />} />
+            <Route
+              path="/"
+              element={<Home />}
+            />
 
             <Route
               path="/property-details/:id"
               element={<PropertyDetails />}
             />
 
-            <Route path="/map" element={<MapRoute />} />
+            <Route
+              path="/map"
+              element={<MapRoute />}
+            />
+
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute>
+                  <MyBookings />
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/dashboard"
@@ -61,8 +85,15 @@ export function App() {
             />
           </Route>
 
-          <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
+          <Route
+            path="/sign-in"
+            element={<SignIn />}
+          />
+
+          <Route
+            path="/sign-up"
+            element={<SignUp />}
+          />
         </Routes>
 
         <ReactQueryDevtools initialIsOpen={false} />
