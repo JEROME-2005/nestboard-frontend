@@ -1,6 +1,6 @@
-import { Heart, Building2, MessageCircle } from "lucide-react"
-import { NavLink } from "react-router"
-import { UserButton, useUser } from "@clerk/react"
+import { Heart, Building2, MessageCircle, LogOut } from "lucide-react"
+import { NavLink, useNavigate } from "react-router"
+import { useAuthStore } from "@/stores/authStore"
 
 export type NavbarLink = {
   label: string
@@ -12,8 +12,19 @@ type NavbarProps = {
 }
 
 export function Navbar({ links }: NavbarProps) {
-  const { isSignedIn, user } = useUser()
-  const isAdmin = user?.publicMetadata?.role === "admin"
+  const navigate = useNavigate()
+
+  const user = useAuthStore((state) => state.user)
+  const logout = useAuthStore((state) => state.logout)
+
+  const isSignedIn = !!user
+  const isAdmin = user?.role === "ADMIN"
+
+  function handleLogout() {
+    logout()
+    navigate("/", { replace: true })
+  }
+
   return (
     <div className="absolute top-0 right-0 left-0 z-50 px-4 pt-4">
       <nav
@@ -21,18 +32,18 @@ export function Navbar({ links }: NavbarProps) {
           isAdmin ? "bg-blue-500/50" : "bg-orange-500/50"
         }`}
       >
-        {/* Logo */}
         <NavLink to="/">
           <div className="flex items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
               <Building2 className="h-5 w-5 text-white" />
             </div>
 
-            <span className="text-lg tracking-wide text-white">NestBoard</span>
+            <span className="text-lg tracking-wide text-white">
+              NestBoard
+            </span>
           </div>
         </NavLink>
 
-        {/* Nav links */}
         <div className="flex items-center gap-1">
           {links.map(({ label, to }) => (
             <NavLink
@@ -50,13 +61,14 @@ export function Navbar({ links }: NavbarProps) {
               {label}
             </NavLink>
           ))}
+
           {isAdmin && (
             <NavLink
               to="/admin"
               className={({ isActive }) =>
                 isActive
-                  ? "text-md font-regular rounded-full bg-primary px-4 py-1.5 text-white"
-                  : "text-md font-regular px-4 py-1.5 text-white/70 transition-colors hover:text-white"
+                  ? "text-md rounded-full bg-primary px-4 py-1.5 text-white"
+                  : "text-md px-4 py-1.5 text-white/70 hover:text-white"
               }
             >
               Admin
@@ -64,32 +76,49 @@ export function Navbar({ links }: NavbarProps) {
           )}
         </div>
 
-        {/* Right section */}
         <div className="flex items-center gap-3.5">
-          <button className="rounded-full p-2 transition-colors hover:bg-white/10">
-            <Heart className="h-5 w-5 text-white/70 hover:text-white" />
-          </button>
+          {isSignedIn && (
+            <>
+              <NavLink to="/saved" className="rounded-full p-2">
+                <Heart className="h-5 w-5 text-white/70 hover:text-white" />
+              </NavLink>
 
-          <button className="rounded-full p-2 transition-colors hover:bg-white/10">
-            <MessageCircle className="h-5 w-5 text-white/70 hover:text-white" />
-          </button>
+              <button className="rounded-full p-2">
+                <MessageCircle className="h-5 w-5 text-white/70 hover:text-white" />
+              </button>
 
-          {!isSignedIn ? (
+              <div className="flex items-center gap-2">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName}
+                    className="h-9 w-9 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-sm font-semibold text-gray-700">
+                    {user.displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="rounded-full p-2 text-white/70 hover:bg-white/10 hover:text-white"
+                  title="Sign out"
+                >
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            </>
+          )}
+
+          {!isSignedIn && (
             <NavLink
               to="/sign-in"
-              className="text-md rounded-full bg-white px-4 py-1.5 text-gray-800 transition-colors hover:bg-white/90"
+              className="text-md rounded-full bg-white px-4 py-1.5 text-gray-800 hover:bg-white/90"
             >
               Sign in
             </NavLink>
-          ) : (
-            <UserButton
-              afterSwitchSessionUrl="/sign-in"
-              appearance={{
-                elements: {
-                  avatarBox: "h-9 w-9",
-                },
-              }}
-            />
           )}
         </div>
       </nav>

@@ -1,17 +1,30 @@
+import { apiClient } from "@/api/client"
 import type { Property, PropertyDetail } from "@/types/property"
 
-const API_URL = import.meta.env.VITE_API_URL
+export type PropertyListResponse = {
+  data: Property[]
+  meta: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNextPage: boolean
+    hasPreviousPage: boolean
+  }
+}
 
-export async function fetchProperties(): Promise<Property[]> {
-  const res = await fetch(`${API_URL}/api/properties`)
-  if (!res.ok) throw new Error("Failed to fetch properties")
-  return res.json()
+export async function fetchProperties(
+  query = ""
+): Promise<PropertyListResponse> {
+  const queryString = query ? `?${query}` : ""
+
+  return apiClient.get<PropertyListResponse>(
+    `/api/properties${queryString}`
+  )
 }
 
 export async function fetchPropertyDetail(
   id: string
 ): Promise<PropertyDetail> {
-  const res = await fetch(`${API_URL}/api/properties/${id}`)
-  if (!res.ok) throw new Error(`Failed to fetch property: ${id}`)
-  return res.json()
+  return apiClient.get<PropertyDetail>(`/api/properties/${id}`)
 }

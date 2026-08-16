@@ -2,7 +2,7 @@ import { useState } from "react"
 import type { FormEvent } from "react"
 import { Link, useLocation, useNavigate } from "react-router"
 import { ApiError } from "@/api/client"
-import { login } from "@/api/auth"
+import { getCurrentUser, register } from "@/api/auth"
 import { useAuthStore } from "@/stores/authStore"
 
 function getSafeReturnTo(value: string | null): string {
@@ -21,7 +21,7 @@ function getSafeReturnTo(value: string | null): string {
   }
 }
 
-export function SignIn() {
+export function SignUp() {
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -30,6 +30,7 @@ export function SignIn() {
   const searchParams = new URLSearchParams(location.search)
   const returnTo = getSafeReturnTo(searchParams.get("returnTo"))
 
+  const [displayName, setDisplayName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -42,12 +43,12 @@ export function SignIn() {
     setIsLoading(true)
 
     try {
-      await login({
+      await register({
+        displayName,
         email,
         password,
       })
 
-      const { getCurrentUser } = await import("@/api/auth")
       const user = await getCurrentUser()
 
       setUser(user)
@@ -57,7 +58,7 @@ export function SignIn() {
       if (error instanceof ApiError) {
         setError(error.message)
       } else {
-        setError("Unable to sign in. Please try again.")
+        setError("Unable to create your account.")
       }
     } finally {
       setIsLoading(false)
@@ -68,12 +69,8 @@ export function SignIn() {
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
         <h1 className="text-2xl font-bold text-gray-900">
-          Sign in to NestBoard
+          Create your NestBoard account
         </h1>
-
-        <p className="mt-2 text-sm text-gray-500">
-          Continue to your NestBoard account.
-        </p>
 
         {error && (
           <div className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -82,6 +79,25 @@ export function SignIn() {
         )}
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+          <div>
+            <label
+              htmlFor="displayName"
+              className="mb-2 block text-sm font-medium text-gray-700"
+            >
+              Display name
+            </label>
+
+            <input
+              id="displayName"
+              required
+              minLength={2}
+              maxLength={80}
+              value={displayName}
+              onChange={(event) => setDisplayName(event.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-primary"
+            />
+          </div>
+
           <div>
             <label
               htmlFor="email"
@@ -113,7 +129,8 @@ export function SignIn() {
               id="password"
               type="password"
               required
-              autoComplete="current-password"
+              minLength={8}
+              autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2.5 outline-none focus:border-primary"
@@ -123,19 +140,19 @@ export function SignIn() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-white transition-opacity disabled:opacity-50"
+            className="w-full rounded-lg bg-primary px-4 py-2.5 font-medium text-white disabled:opacity-50"
           >
-            {isLoading ? "Signing in..." : "Sign in"}
+            {isLoading ? "Creating account..." : "Create account"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          Need an account?{" "}
+          Already have an account?{" "}
           <Link
-            to={`/sign-up?returnTo=${encodeURIComponent(returnTo)}`}
+            to={`/sign-in?returnTo=${encodeURIComponent(returnTo)}`}
             className="font-medium text-primary hover:underline"
           >
-            Create one
+            Sign in
           </Link>
         </p>
       </div>

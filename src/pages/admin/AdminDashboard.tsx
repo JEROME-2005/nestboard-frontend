@@ -1,4 +1,4 @@
-import { useUser } from "@clerk/react"
+import { useAuthStore } from "@/stores/authStore"
 import { useQueries } from "@tanstack/react-query"
 import { Building2, House, TrendingUp } from "lucide-react"
 import { type ReactNode, useMemo } from "react"
@@ -41,11 +41,16 @@ function StatCard({
         >
           {icon}
         </div>
+
         <div className="flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
-          <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+          <TrendingUp
+            className="h-3.5 w-3.5"
+            aria-hidden
+          />
           {trend}
         </div>
       </div>
+
       <p className="mt-6 text-4xl font-bold tracking-tight text-gray-900 tabular-nums">
         {loading || value === null ? (
           <span className="inline-block h-10 w-16 animate-pulse rounded-md bg-gray-100" />
@@ -53,28 +58,49 @@ function StatCard({
           value
         )}
       </p>
-      <p className="mt-1 text-base font-semibold text-gray-800">{label}</p>
-      <p className="mt-2 text-sm text-gray-400">{timeframe}</p>
+
+      <p className="mt-1 text-base font-semibold text-gray-800">
+        {label}
+      </p>
+
+      <p className="mt-2 text-sm text-gray-400">
+        {timeframe}
+      </p>
     </div>
   )
 }
 
 export function AdminDashboard() {
-  const { user } = useUser()
-  const displayName =
-    user?.firstName ??
-    user?.fullName ??
-    user?.username ??
-    user?.primaryEmailAddress?.emailAddress ??
-    "there"
+  const user = useAuthStore((state) => state.user)
+
+  const displayName = user?.displayName ?? "there"
 
   const {
-    data: properties,
+    data: propertiesResponse,
     isLoading: propertiesLoading,
     isError: propertiesError,
   } = useProperties()
+
+  /*
+   * useProperties() returns:
+   *
+   * {
+   *   data: Property[],
+   *   meta: {
+   *     page,
+   *     limit,
+   *     total,
+   *     totalPages,
+   *     hasNextPage,
+   *     hasPreviousPage
+   *   }
+   * }
+   */
+
+  const properties = propertiesResponse?.data ?? []
+
   const propertyIds = useMemo(
-    () => properties?.map((p) => p.id) ?? [],
+    () => properties.map((property) => property.id),
     [properties],
   )
 
@@ -87,11 +113,20 @@ export function AdminDashboard() {
     })),
   })
 
-  const totalProperties = properties?.length ?? null
+  /*
+   * Use server-provided total instead of the currently
+   * loaded array length.
+   */
+  const totalProperties =
+    propertiesResponse?.meta.total ?? null
 
   const roomsLoading =
     propertyIds.length > 0 &&
-    detailQueries.some((q) => q.isPending || q.isFetching)
+    detailQueries.some(
+      (query) =>
+        query.isPending ||
+        query.isFetching,
+    )
 
   const totalRooms =
     propertyIds.length === 0
@@ -99,7 +134,9 @@ export function AdminDashboard() {
       : roomsLoading
         ? null
         : detailQueries.reduce(
-            (sum, q) => sum + (q.data?.rooms?.length ?? 0),
+            (sum, query) =>
+              sum +
+              (query.data?.rooms?.length ?? 0),
             0,
           )
 
@@ -109,7 +146,10 @@ export function AdminDashboard() {
         <h1 className="text-4xl font-bold tracking-tight text-gray-900">
           Hello, {displayName}
         </h1>
-        <p className="mt-2 text-base text-gray-500">{formatTodayLong()}</p>
+
+        <p className="mt-2 text-base text-gray-500">
+          {formatTodayLong()}
+        </p>
 
         {propertiesError ? (
           <p className="mt-10 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -118,22 +158,38 @@ export function AdminDashboard() {
         ) : (
           <div className="mt-10 grid gap-6 sm:grid-cols-2">
             <StatCard
-              icon={<Building2 className="h-5 w-5 text-teal-600" />}
+              icon={
+                <Building2
+                  className="h-5 w-5 text-teal-600"
+                />
+              }
               iconWrapClassName="bg-teal-100"
               trend="+1"
-              value={propertiesLoading ? null : totalProperties}
+              value={
+                propertiesLoading
+                  ? null
+                  : totalProperties
+              }
               label="Total Properties"
               timeframe="this quarter"
               loading={propertiesLoading}
             />
+
             <StatCard
-              icon={<House className="h-5 w-5 text-purple-600" />}
+              icon={
+                <House
+                  className="h-5 w-5 text-purple-600"
+                />
+              }
               iconWrapClassName="bg-purple-100"
               trend="+4"
               value={totalRooms}
               label="Total Rooms"
               timeframe="from last month"
-              loading={propertiesLoading || roomsLoading}
+              loading={
+                propertiesLoading ||
+                roomsLoading
+              }
             />
           </div>
         )}

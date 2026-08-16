@@ -5,6 +5,7 @@ import { Navbar, type NavbarLink } from "./components/common/Navbar"
 import { MapRoute } from "./components/common/MapRoute"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { SignIn } from "./pages/Auth/SignIn"
+import { SignUp } from "./pages/Auth/SignUp"
 import { Dashboard } from "./pages/dashboard/Dashboard"
 import { ProtectedRoute } from "./components/auth/ProtectedRoute"
 import { AdminDashboard } from "./pages/admin/AdminDashboard"
@@ -33,8 +34,14 @@ export function App() {
         <Routes>
           <Route element={<AppLayout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/property-details/:id" element={<PropertyDetails />} />
+
+            <Route
+              path="/property-details/:id"
+              element={<PropertyDetails />}
+            />
+
             <Route path="/map" element={<MapRoute />} />
+
             <Route
               path="/dashboard"
               element={
@@ -43,6 +50,7 @@ export function App() {
                 </ProtectedRoute>
               }
             />
+
             <Route
               path="/admin"
               element={
@@ -52,11 +60,15 @@ export function App() {
               }
             />
           </Route>
-          <Route path="/sign-in/*" element={<SignIn />} />
+
+          <Route path="/sign-in" element={<SignIn />} />
+          <Route path="/sign-up" element={<SignUp />} />
         </Routes>
+
         <ReactQueryDevtools initialIsOpen={false} />
       </AdminThemeApplier>
     </BrowserRouter>
   )
 }
+
 export default App
