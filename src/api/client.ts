@@ -172,21 +172,40 @@ export const apiClient = {
   post<T>(path: string, body?: unknown): Promise<T> {
     return request<T>(path, {
       method: "POST",
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : JSON.stringify(body),
+    })
+  },
+
+  postForm<T>(
+    path: string,
+    body: FormData,
+  ): Promise<T> {
+    return request<T>(path, {
+      method: "POST",
+      body,
     })
   },
 
   patch<T>(path: string, body?: unknown): Promise<T> {
     return request<T>(path, {
       method: "PATCH",
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : JSON.stringify(body),
     })
   },
 
   put<T>(path: string, body?: unknown): Promise<T> {
     return request<T>(path, {
       method: "PUT",
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body:
+        body === undefined
+          ? undefined
+          : JSON.stringify(body),
     })
   },
 
