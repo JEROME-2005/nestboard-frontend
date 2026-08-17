@@ -285,6 +285,28 @@ export function AdminDashboard() {
       return
     }
 
+    if (!propertyForm.imageUrl.trim()) {
+      alert("Please upload a property image before saving.")
+      return
+    }
+
+    const latitude = Number(propertyForm.latitude)
+    const longitude = Number(propertyForm.longitude)
+
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+      alert("Latitude must be a number between -90 and 90.")
+      return
+    }
+
+    if (
+      !Number.isFinite(longitude) ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      alert("Longitude must be a number between -180 and 180.")
+      return
+    }
+
     setSavingProperty(true)
 
     try {
@@ -298,8 +320,8 @@ export function AdminDashboard() {
           .split(",")
           .map((item) => item.trim())
           .filter(Boolean),
-        latitude: Number(propertyForm.latitude),
-        longitude: Number(propertyForm.longitude),
+        latitude,
+        longitude,
         imageUrl: propertyForm.imageUrl.trim(),
         minStay: propertyForm.minStay.trim(),
         isActive: propertyForm.isActive,
@@ -338,13 +360,41 @@ export function AdminDashboard() {
   }
 
   async function uploadImage(file: File) {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      alert("Only JPG, PNG, and WEBP images are allowed.")
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Property image must be 5 MB or smaller.")
+      return
+    }
+
     setUploadingImage(true)
 
     try {
       const result = await uploadPropertyImage(file)
-      setPropertyForm((current) => ({ ...current, imageUrl: result.url }))
+
+      if (!result.url) {
+        throw new Error("The server did not return an image URL.")
+      }
+
+      setPropertyForm((current) => ({
+        ...current,
+        imageUrl: result.url,
+      }))
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Image upload failed")
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Image upload failed",
+      )
     } finally {
       setUploadingImage(false)
     }
