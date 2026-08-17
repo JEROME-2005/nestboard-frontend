@@ -139,37 +139,74 @@ export async function deleteProperty(
   )
 }
 
+type ApiRoomType = {
+  id: string
+  name: string
+  pricePerMonth: string | number
+  freeSeats?: number
+  maxSeatsCount?: number
+  roomsCount?: number
+  seatCapacity?: number
+  hasAC: boolean
+  isAvailable?: boolean
+}
+
 export async function fetchRoomTypes(
   propertyId: string,
-) {
-  return apiClient.get<AdminRoomType[]>(
+): Promise<AdminRoomType[]> {
+  const data = await apiClient.get<ApiRoomType[]>(
     `/api/properties/${propertyId}/room-types`,
   )
+
+  return data.map((roomType) => ({
+    id: roomType.id,
+
+    propertyId,
+
+    name: roomType.name,
+
+    pricePerMonth:
+      roomType.pricePerMonth,
+
+    seatCapacity:
+      roomType.maxSeatsCount ??
+      roomType.seatCapacity ??
+      1,
+
+    hasAC: roomType.hasAC,
+
+    isAvailable:
+      roomType.isAvailable ?? true,
+  }))
 }
 
 export async function fetchRoomTypeDetail(
   propertyId: string,
   roomTypeId: string,
-) {
-  return apiClient.get<{
+): Promise<{
+  rooms: AdminRoom[]
+}> {
+  const data = await apiClient.get<{
     id: string
-    name: string
-    pricePerMonth: string
-    maxSeatsCount: number
-    roomsCount: number
-    hasAC: boolean
     rooms: {
       roomId: string
       roomName: string
-      booking: {
-        seatIndex: number
-        tenant: string
-        tenantBio: string
-      }[]
     }[]
   }>(
     `/api/properties/${propertyId}/room-types/${roomTypeId}`,
   )
+
+  return {
+    rooms: data.rooms.map((room) => ({
+      id: room.roomId,
+
+      roomTypeId,
+
+      roomLabel: room.roomName,
+
+      isAvailable: true,
+    })),
+  }
 }
 
 export async function createRoomType(
@@ -255,10 +292,13 @@ export async function uploadPropertyImage(
 }
 
 export function resolveImageUrl(
-  imageUrl: string,
+  imageUrl?: string | null,
 ) {
+  if (!imageUrl) {
+    return ""
+  }
+
   if (
-    !imageUrl ||
     imageUrl.startsWith("http://") ||
     imageUrl.startsWith("https://")
   ) {
@@ -266,7 +306,13 @@ export function resolveImageUrl(
   }
 
   const apiUrl =
-    import.meta.env.VITE_API_URL as string
+    (import.meta.env.VITE_API_URL as string)
+      ?.replace(/\/$/, "") ?? ""
 
-  return `${apiUrl}${imageUrl}`
+  const path =
+    imageUrl.startsWith("/")
+      ? imageUrl
+      : `/${imageUrl}`
+
+  return `${apiUrl}${path}`
 }

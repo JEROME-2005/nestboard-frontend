@@ -393,10 +393,13 @@ export function AdminDashboard() {
       const detail = await fetchRoomTypeDetail(propertyId, roomTypeId)
 
       const mappedRooms: AdminRoom[] = detail.rooms.map((room) => ({
-        id: room.roomId,
-        roomTypeId,
-        roomLabel: room.roomName,
-        isAvailable: true,
+        id: room.id,
+
+roomTypeId,
+
+roomLabel: room.roomLabel,
+
+isAvailable: room.isAvailable,
       }))
 
       setRooms((current) => ({ ...current, [roomTypeId]: mappedRooms }))
@@ -654,7 +657,7 @@ export function AdminDashboard() {
                         </p>
 
                         <div className="mt-3 flex flex-wrap gap-2">
-                          {property.amenities.map((amenity) => (
+                          {(property.amenities ?? []).map((amenity) => (
                             <span
                               key={amenity}
                               className="rounded-lg bg-gray-50 px-2.5 py-1 text-xs text-gray-600"

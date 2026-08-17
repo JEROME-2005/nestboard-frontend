@@ -21,6 +21,8 @@ import { AdminProtectedRoute } from "./components/auth/AdminProtectedRoute"
 import { AdminThemeApplier } from "./components/auth/AdminThemeApplier"
 import { MyBookings } from "./pages/bookings/MyBookings"
 import { SavedProperties } from "./pages/saved/SavedProperties"
+import { Profile } from "./pages/profile/Profile"
+import { Notifications } from "./pages/notifications/Notifications"
 
 const navLinks: NavbarLink[] = [
   { label: "Explore", to: "/" },
@@ -94,6 +96,24 @@ export function App() {
               }
             />
           </Route>
+
+          <Route
+  path="/profile"
+  element={
+    <ProtectedRoute>
+      <Profile />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/notifications"
+  element={
+    <ProtectedRoute>
+      <Notifications />
+    </ProtectedRoute>
+  }
+/>
 
           <Route
             path="/sign-in"

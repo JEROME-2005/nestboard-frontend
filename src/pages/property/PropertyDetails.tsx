@@ -3,6 +3,7 @@ import { PropertySection } from "./components/PropertySection"
 import { PropertyInfo } from "./components/PropertyInfo"
 import { RoomList } from "./components/RoomList"
 import { usePropertyDetail } from "@/hooks/usePropertyDetail"
+import { Reviews } from "./components/Reviews"
 
 export function PropertyDetails() {
   const { id } = useParams<{ id: string }>()
@@ -65,6 +66,8 @@ export function PropertyDetails() {
             propertyId={property.id}
             rooms={property.rooms}
           />
+
+          <Reviews propertyId={property.id} />
         </div>
       </div>
     </div>

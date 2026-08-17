@@ -88,8 +88,11 @@ export function BookingPanel({
     useState<number | null>(null)
 
   const [createdBookingId, setCreatedBookingId] =
-    useState<string | null>(null)
-
+  useState<string | null>(() => {
+    return sessionStorage.getItem(
+      `nestboard_pending_booking_${propertyId}`
+    )
+  })
   const [createdAt, setCreatedAt] =
     useState<string | null>(null)
 
@@ -149,10 +152,22 @@ export function BookingPanel({
         durationMonths,
       },
       {
-        onSuccess: (booking) => {
-          setCreatedBookingId(booking.id)
-          setCreatedAt(booking.createdAt)
-        },
+       onSuccess: () => {
+  sessionStorage.removeItem(
+    `nestboard_pending_booking_${propertyId}`
+  )
+
+  sessionStorage.removeItem(
+    `nestboard_pending_booking_created_at_${propertyId}`
+  )
+
+  setCreatedBookingId(null)
+  setCreatedAt(null)
+
+  navigate("/bookings", {
+    replace: true,
+  })
+},
         onError: (err) => {
           if (err instanceof ApiError) {
             if (
