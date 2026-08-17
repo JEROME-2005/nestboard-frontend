@@ -130,9 +130,13 @@ async function request<T>(
 ): Promise<T> {
   const headers = new Headers(options.headers)
 
-  if (options.body && !headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json")
-  }
+  if (
+  options.body &&
+  !(options.body instanceof FormData) &&
+  !headers.has("Content-Type")
+) {
+  headers.set("Content-Type", "application/json")
+}
 
   const token = loadAccessToken()
 

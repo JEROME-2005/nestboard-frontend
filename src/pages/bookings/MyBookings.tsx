@@ -3,29 +3,55 @@ import {
   CheckCircle2,
   Clock3,
   Home,
+  Loader2,
   XCircle,
 } from "lucide-react"
-import { Link } from "react-router"
-import { Button } from "@/components/ui/button"
-import { useMyBookings } from "@/hooks/useBookings"
-import { useCancelBooking } from "@/hooks/useBookings"
-import type { BookingStatus } from "@/api/bookings"
-import { ApiError } from "@/api/client"
-import { useState } from "react"
 
-function statusClasses(status: BookingStatus) {
+import {
+  Link,
+} from "react-router"
+
+import {
+  Button,
+} from "@/components/ui/button"
+
+import {
+  useMyBookings,
+  useConfirmBooking,
+  useCancelBooking,
+} from "@/hooks/useBookings"
+
+import type {
+  BookingStatus,
+} from "@/api/bookings"
+
+import {
+  ApiError,
+} from "@/api/client"
+
+import {
+  useEffect,
+  useState,
+} from "react"
+
+function statusClasses(
+  status: BookingStatus
+) {
   switch (status) {
     case "CONFIRMED":
-      return "bg-green-50 text-green-700 border-green-200"
+      return "border-green-200 bg-green-50 text-green-700"
 
     case "PENDING":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200"
+      return "border-yellow-200 bg-yellow-50 text-yellow-700"
 
     case "CANCELLED":
-      return "bg-red-50 text-red-700 border-red-200"
+      return "border-red-200 bg-red-50 text-red-700"
 
     case "EXPIRED":
-      return "bg-gray-100 text-gray-600 border-gray-200"
+      return "border-gray-200 bg-gray-100 text-gray-600"
+
+    default:
+      return "border-gray-200 bg-gray-100 text-gray-600"
   }
 }
 
@@ -34,23 +60,138 @@ function StatusIcon({
 }: {
   status: BookingStatus
 }) {
-  if (status === "CONFIRMED") {
-    return <CheckCircle2 className="size-4" />
+  if (
+    status === "CONFIRMED"
+  ) {
+    return (
+      <CheckCircle2 className="size-4" />
+    )
   }
 
-  if (status === "PENDING") {
-    return <Clock3 className="size-4" />
+  if (
+    status === "PENDING"
+  ) {
+    return (
+      <Clock3 className="size-4" />
+    )
   }
 
-  return <XCircle className="size-4" />
+  return (
+    <XCircle className="size-4" />
+  )
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(new Date(value))
+function formatDate(
+  value: string
+) {
+  return new Intl.DateTimeFormat(
+    "en-US",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    }
+  ).format(new Date(value))
+}
+
+function PendingTimer({
+  createdAt,
+}: {
+  createdAt: string
+}) {
+  const HOLD_MS =
+    60 * 1000
+
+  const [
+    remaining,
+    setRemaining,
+  ] = useState(
+    Math.max(
+      0,
+      HOLD_MS -
+        (Date.now() -
+          new Date(
+            createdAt
+          ).getTime())
+    )
+  )
+
+  useEffect(() => {
+    const interval =
+      window.setInterval(
+        () => {
+          setRemaining(
+            Math.max(
+              0,
+              HOLD_MS -
+                (Date.now() -
+                  new Date(
+                    createdAt
+                  ).getTime())
+            )
+          )
+        },
+        1000
+      )
+
+    return () => {
+      window.clearInterval(
+        interval
+      )
+    }
+  }, [createdAt])
+
+  const minutes =
+    Math.floor(
+      remaining / 60000
+    )
+
+  const seconds =
+    Math.floor(
+      (remaining % 60000) /
+        1000
+    )
+
+  const expired =
+    remaining <= 0
+
+  return (
+    <div
+      className={[
+        "rounded-xl border p-4",
+        expired
+          ? "border-red-200 bg-red-50"
+          : "border-orange-200 bg-orange-50",
+      ].join(" ")}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        Payment hold
+      </p>
+
+      <p
+        className={[
+          "mt-1 text-2xl font-bold tabular-nums",
+          expired
+            ? "text-red-600"
+            : "text-orange-600",
+        ].join(" ")}
+      >
+        {expired
+          ? "00:00"
+          : `${String(
+              minutes
+            ).padStart(2, "0")}:${String(
+              seconds
+            ).padStart(2, "0")}`}
+      </p>
+
+      <p className="mt-1 text-xs text-gray-600">
+        {expired
+          ? "Payment window expired."
+          : "Confirm before the hold expires."}
+      </p>
+    </div>
+  )
 }
 
 export function MyBookings() {
@@ -61,24 +202,57 @@ export function MyBookings() {
     refetch,
   } = useMyBookings()
 
-  const cancelMutation = useCancelBooking()
+  const confirmMutation =
+    useConfirmBooking()
 
-  const [error, setError] = useState("")
+  const cancelMutation =
+    useCancelBooking()
 
-  function handleCancel(id: string) {
+  const [
+    error,
+    setError,
+  ] = useState("")
+
+  function handleConfirm(
+    id: string
+  ) {
     setError("")
 
-    cancelMutation.mutate(id, {
-      onError: (err) => {
-        if (err instanceof ApiError) {
-          setError(err.message)
-        } else {
+    confirmMutation.mutate(
+      id,
+      {
+        onError: (
+          err
+        ) => {
           setError(
-            "Unable to cancel this booking."
+            err instanceof ApiError
+              ? err.message
+              : "Unable to confirm this booking."
           )
-        }
-      },
-    })
+        },
+      }
+    )
+  }
+
+  function handleCancel(
+    id: string
+  ) {
+    setError("")
+
+    cancelMutation.mutate(
+      id,
+      {
+        onError: (
+          err
+        ) => {
+          setError(
+            err instanceof ApiError
+              ? err.message
+              : "Unable to cancel this booking."
+          )
+        },
+      }
+    )
   }
 
   return (
@@ -90,8 +264,7 @@ export function MyBookings() {
           </h1>
 
           <p className="mt-2 text-gray-500">
-            View and manage your NestBoard
-            reservations.
+            View and manage your NestBoard reservations.
           </p>
         </div>
 
@@ -103,7 +276,9 @@ export function MyBookings() {
 
         {isLoading && (
           <div className="mt-8 rounded-2xl bg-white p-8 text-center shadow-sm">
-            <p className="text-gray-500">
+            <Loader2 className="mx-auto size-6 animate-spin text-orange-500" />
+
+            <p className="mt-3 text-gray-500">
               Loading bookings...
             </p>
           </div>
@@ -118,7 +293,9 @@ export function MyBookings() {
             <Button
               className="mt-4"
               variant="outline"
-              onClick={() => void refetch()}
+              onClick={() =>
+                void refetch()
+              }
             >
               Try again
             </Button>
@@ -136,8 +313,7 @@ export function MyBookings() {
               </h2>
 
               <p className="mt-2 text-sm text-gray-500">
-                Explore properties and reserve
-                your first seat.
+                Explore properties and reserve your first seat.
               </p>
 
               <Button
@@ -152,145 +328,223 @@ export function MyBookings() {
           )}
 
         <div className="mt-8 space-y-5">
-          {bookings.map((booking) => {
-            const property =
-              booking.room.roomType.property
+          {bookings.map(
+            (booking) => {
+              const property =
+                booking.room
+                  .roomType
+                  .property
 
-            const price = Number(
-              booking.totalAmount
-            )
+              const price =
+                Number(
+                  booking.totalAmount
+                )
 
-            return (
-              <div
-                key={booking.id}
-                className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
-              >
-                <div className="flex flex-col md:flex-row">
-                  <img
-                    src={property.imageUrl}
-                    alt={property.title}
-                    className="h-52 w-full object-cover md:h-auto md:w-56"
-                  />
+              return (
+                <div
+                  key={booking.id}
+                  className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100"
+                >
+                  <div className="flex flex-col md:flex-row">
+                    <img
+                      src={
+                        property.imageUrl
+                      }
+                      alt={
+                        property.title
+                      }
+                      className="h-52 w-full object-cover md:h-auto md:w-56"
+                    />
 
-                  <div className="flex-1 p-5 md:p-6">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <h2 className="text-xl font-bold text-gray-900">
-                          {property.title}
-                        </h2>
+                    <div className="flex-1 p-5 md:p-6">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <h2 className="text-xl font-bold text-gray-900">
+                            {
+                              property.title
+                            }
+                          </h2>
 
-                        <p className="mt-1 text-sm text-gray-500">
-                          {property.address},{" "}
-                          {property.city}
-                        </p>
+                          <p className="mt-1 text-sm text-gray-500">
+                            {
+                              property.address
+                            }
+                            ,{" "}
+                            {
+                              property.city
+                            }
+                          </p>
+                        </div>
+
+                        <span
+                          className={[
+                            "inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
+                            statusClasses(
+                              booking.bookingStatus
+                            ),
+                          ].join(
+                            " "
+                          )}
+                        >
+                          <StatusIcon
+                            status={
+                              booking.bookingStatus
+                            }
+                          />
+
+                          {
+                            booking.bookingStatus
+                          }
+                        </span>
                       </div>
 
-                      <span
-                        className={[
-                          "inline-flex w-fit items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold",
-                          statusClasses(
-                            booking.bookingStatus
-                          ),
-                        ].join(" ")}
-                      >
-                        <StatusIcon
-                          status={
-                            booking.bookingStatus
+                      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <Info
+                          label="Room"
+                          value={
+                            booking.room.roomLabel
                           }
                         />
 
-                        {booking.bookingStatus}
-                      </span>
-                    </div>
-
-                    <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                      <Info
-                        label="Room"
-                        value={
-                          booking.room.roomLabel
-                        }
-                      />
-
-                      <Info
-                        label="Room type"
-                        value={
-                          booking.room.roomType
-                            .name
-                        }
-                      />
-
-                      <Info
-                        label="Seat"
-                        value={`Seat ${booking.seatNumber}`}
-                      />
-
-                      <Info
-                        label="Total"
-                        value={
-                          Number.isFinite(price)
-                            ? `LKR ${price.toLocaleString()}`
-                            : booking.totalAmount
-                        }
-                      />
-                    </div>
-
-                    <div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4 text-sm text-gray-500">
-                      <CalendarDays className="size-4" />
-
-                      <span>
-                        {formatDate(
-                          booking.leaseStart
-                        )}{" "}
-                        –{" "}
-                        {formatDate(
-                          booking.leaseEnd
-                        )}
-                      </span>
-                    </div>
-
-                    {booking.bookingStatus ===
-                      "PENDING" && (
-                      <div className="mt-4 flex flex-wrap gap-3">
-                        <Button
-                          asChild
-                          size="sm"
-                        >
-                          <Link
-                            to={`/property-details/${property.id}`}
-                          >
-                            Continue booking
-                          </Link>
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={
-                            cancelMutation.isPending
+                        <Info
+                          label="Room type"
+                          value={
+                            booking.room
+                              .roomType
+                              .name
                           }
-                          onClick={() =>
-                            handleCancel(
-                              booking.id
+                        />
+
+                        <Info
+                          label="Seat"
+                          value={`Seat ${booking.seatNumber}`}
+                        />
+
+                        <Info
+                          label="Total"
+                          value={
+                            Number.isFinite(
+                              price
                             )
+                              ? `LKR ${price.toLocaleString()}`
+                              : booking.totalAmount
                           }
-                        >
-                          Cancel hold
-                        </Button>
+                        />
                       </div>
-                    )}
 
-                    {booking.bookingStatus ===
-                      "CONFIRMED" && (
-                      <div className="mt-4 flex items-center gap-2 text-sm font-medium text-green-700">
-                        <CheckCircle2 className="size-4" />
-                        Reservation confirmed
+                      <div className="mt-5 flex flex-wrap items-center gap-2 border-t pt-4 text-sm text-gray-500">
+                        <CalendarDays className="size-4" />
+
+                        <span>
+                          {formatDate(
+                            booking.leaseStart
+                          )}{" "}
+                          –{" "}
+                          {formatDate(
+                            booking.leaseEnd
+                          )}
+                        </span>
                       </div>
-                    )}
+
+                      {booking.bookingStatus ===
+                        "PENDING" && (
+                        <div className="mt-5 space-y-4">
+                          <PendingTimer
+                            createdAt={
+                              booking.createdAt
+                            }
+                          />
+
+                          <div className="flex flex-wrap gap-3">
+                            <Button
+                              size="sm"
+                              disabled={
+                                confirmMutation.isPending
+                              }
+                              onClick={() =>
+                                handleConfirm(
+                                  booking.id
+                                )
+                              }
+                              className="bg-orange-500 text-white hover:bg-orange-600"
+                            >
+                              {confirmMutation.isPending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <CheckCircle2 className="size-4" />
+                              )}
+
+                              Confirm booking
+                            </Button>
+
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={
+                                cancelMutation.isPending
+                              }
+                              onClick={() =>
+                                handleCancel(
+                                  booking.id
+                                )
+                              }
+                            >
+                              {cancelMutation.isPending ? (
+                                <Loader2 className="size-4 animate-spin" />
+                              ) : (
+                                <XCircle className="size-4" />
+                              )}
+
+                              Cancel booking
+                            </Button>
+
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                            >
+                              <Link
+                                to={`/property-details/${property.id}`}
+                              >
+                                Continue booking
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      {booking.bookingStatus ===
+                        "CONFIRMED" && (
+                        <div className="mt-5 flex items-center gap-2 rounded-xl bg-green-50 p-4 text-sm font-semibold text-green-700">
+                          <CheckCircle2 className="size-5" />
+
+                          Reservation confirmed
+                        </div>
+                      )}
+
+                      {booking.bookingStatus ===
+                        "CANCELLED" && (
+                        <div className="mt-5 flex items-center gap-2 rounded-xl bg-red-50 p-4 text-sm font-semibold text-red-700">
+                          <XCircle className="size-5" />
+
+                          Booking cancelled
+                        </div>
+                      )}
+
+                      {booking.bookingStatus ===
+                        "EXPIRED" && (
+                        <div className="mt-5 flex items-center gap-2 rounded-xl bg-gray-100 p-4 text-sm font-semibold text-gray-600">
+                          <Clock3 className="size-5" />
+
+                          Booking expired
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            }
+          )}
         </div>
       </div>
     </div>
